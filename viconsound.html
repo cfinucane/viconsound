@@ -1,0 +1,101 @@
+<html>
+<head>
+<script type="text/javascript">
+
+var ws = new WebSocket("ws://localhost:9999/");  
+//ws.onopen = function() {  
+//  ws.send("Hello Mr. Server!");  
+//};  
+ws.onmessage = function (e) {
+    // e.data
+    var data = JSON.parse(e.data);
+    ctx.listener.setPosition(data[0], data[1], data[2]);
+    ctx.listener.setOrientation(data[3], data[4], data[5], data[6], data[7], data[8]);
+    console.log(data);
+};
+ws.onclose = function() { console.log("close");};
+
+
+// Detect if the audio context is supported.
+window.AudioContext = (
+  window.AudioContext ||
+  window.webkitAudioContext ||
+  null
+);
+
+if (!AudioContext) {
+  throw new Error("AudioContext not supported!");
+} 
+
+// Create a new audio context.
+var ctx = new AudioContext();
+
+// Create a AudioGainNode to control the main volume.
+var mainVolume = ctx.createGain();
+// Connect the main volume node to the context destination.
+mainVolume.connect(ctx.destination);
+
+// Create an object with a sound source and a volume control.
+var sound = {};
+sound.source = ctx.createBufferSource();
+sound.volume = ctx.createGain();
+
+// Create panner
+
+sound.panner = ctx.createPanner();
+sound.panner.connect(mainVolume);
+
+// Connect the sound source to the volume control.
+sound.source.connect(sound.volume);
+// Hook up the sound volume control to the main volume.
+sound.volume.connect(sound.panner);
+
+// Make the sound source loop.
+sound.source.loop = true;
+
+// Load a sound file using an ArrayBuffer XMLHttpRequest.
+var request = new XMLHttpRequest();
+var soundFileName = "test2.mp3";
+request.open("GET", soundFileName, true);
+request.responseType = "arraybuffer";
+request.onload = function(e) {
+
+  // Create a buffer from the response ArrayBuffer.
+  var buffer = ctx.createBuffer(this.response, false);
+  sound.buffer = buffer;
+
+  // Make the sound source use the buffer and start playing it.
+  sound.source.buffer = sound.buffer;
+  sound.source.start(ctx.currentTime);
+
+
+    sound.panner.setPosition(4,0.9,0.5);// object at origin
+    var updateTimer = setInterval(updateFunction, 100);
+
+};
+
+function updateFunction() {
+  ws.send("Hello Mr. Server!");  
+}
+
+request.send();
+
+</script>
+</head>
+<body>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<center>
+<h1>
+<div id="status">Loading...</div>
+</h1>
+</center>
+</body>
+</html>
